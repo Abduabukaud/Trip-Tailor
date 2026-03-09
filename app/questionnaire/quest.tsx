@@ -58,15 +58,17 @@ const questions: Question[] = [
     type: "single",
   },
   {
-    text: "What is the maximum time you are willing to spend at an excursion?",
-    options: ["1 Hour","1 1/2 Hours","2 Hours","3-4 Hours","5+ Hours","No Preference"],
+    text: "Do you prefer to be outside or inside?",
+    options: ["inside", "mixed", "outside"],
     type: "single",
   },
+  
   {
     text: "How many locations do you want to visit in a day?",
     options: ["1", "2", "3", "4", "5"],
     type: "single",
   },
+   
   {
     text: "What interests you?",
     options: INTERESTS,
