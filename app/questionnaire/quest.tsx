@@ -42,16 +42,19 @@ const questions: Question[] = [
     options: ["Yes", "No"],
     type: "single",
   },
-  
   {
-    text: "Who will this Trip be for?",
-    options: ["Children", "Family", "Adult"],
+    text: "What kind of trip do you envision?",
+    options: ["Relaxing", "Somewhere In-Between", "High Octane"],
     type: "single",
   },
-
   {
-    text: "How early do you want to start your days?",
-    options: ["9am", "10am", "11am", "12pm", "1pm"],
+    text: "Who will this Trip be for?",
+    options: ["Children", "all-ages", "Adult"],
+    type: "single",
+  },
+   {
+    text: "What would you like to do in this trip?",
+    options: ["see/hear only", "both", "active"],
     type: "single",
   },
   {
@@ -60,20 +63,22 @@ const questions: Question[] = [
     type: "single",
   },
   {
-    text: "What is the maximum number of activities you are willing to do in a day?",
+    text: "How many locations do you want to visit in a day?",
     options: ["1", "2", "3", "4", "5"],
     type: "single",
   },
   {
-    text: "What modes of transportation are you comfortable with?",
-    options: TRANSPORT,
+    text: "What interests you?",
+    options: INTERESTS,
     type: "multi",
   },
-  {
-  text: "Select all that apply: What are your interests?",
-  options: INTERESTS,
-  type: "multi",
+   {
+    text: "Do you, or anyone you're with needed disability accomodation?",
+    options: ["Yes","No"],
+    type: "single",
   },
+
+ 
 ];
 
 export default function TripTailorQuestionnaire() {
