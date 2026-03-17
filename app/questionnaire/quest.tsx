@@ -68,7 +68,7 @@ const questions: Question[] = [
     options: ["1", "2", "3", "4", "5"],
     type: "single",
   },
-   
+   //deleted time in place, because user can decide it on their own
   {
     text: "What interests you?",
     options: INTERESTS,

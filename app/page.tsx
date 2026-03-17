@@ -139,7 +139,7 @@ export default function Home() {
               <h4 className="font-semibold text-gray-900 mb-4">Company</h4>
               <ul className="space-y-2 text-gray-600">
                 <li><Link href="/About" className="hover:text-primary-600">About</Link></li>
-                <li><Link href="/blog" className="hover:text-primary-600">Blog</Link></li>
+                
                 <li><Link href="/contact" className="hover:text-primary-600">Contact</Link></li>
                 
               </ul>
