@@ -1,6 +1,7 @@
 # This file contains the core itinerary generation/recommendation engine
 from __future__ import annotations
 
+from collections import Counter
 from datetime import date, timedelta
 from typing import Any
 
@@ -72,6 +73,7 @@ def _matches_hard_filters(candidate: dict[str, Any], payload: dict[str, Any]) ->
 
     return True
 
+
 # Calculates accuracy score for each place in the candidates list given the questionnaire info
 def _score_candidate(candidate: dict[str, Any], payload: dict[str, Any]) -> float:
     score = 0.0
@@ -133,6 +135,18 @@ def _score_candidate(candidate: dict[str, Any], payload: dict[str, Any]) -> floa
     elif budget_level == "high":
         score += 3
 
+    # Prefer more specific classification over generic fallback values
+    if category in {"general", "", None}:
+        score -= 8
+    if activity_type in {"general", "activity", "", None}:
+        score -= 5
+
+    # Small reward for richer metadata
+    if candidate.get("duration_minutes") is not None:
+        score += 2
+    if candidate.get("estimated_cost_cents") is not None:
+        score += 2
+
     return round(score, 2)
 
 
@@ -150,6 +164,68 @@ def _dedupe_candidates(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]
 
     return deduped
 
+
+# Testing revealed that certain categories were suggested more since the scores in those categories would be highest
+# In test_trip_generator.py, the first test showed that 9/10 of top results were museums, this makes recommendations less diverse
+def _select_diverse_candidates_for_trip(
+    ranked_candidates: list[dict[str, Any]],
+    trip_days: int,
+    activities_per_day: int,
+) -> list[dict[str, Any]]:
+    """
+    "hard" diversity pass enforces the following, no duplicate places, max 1 of same category per day,
+    max 2 of same category across whole trip, fallback fill if not enough diverse options
+    """
+    total_needed = trip_days * activities_per_day
+
+    selected: list[dict[str, Any]] = []
+    used_place_ids: set[str] = set()
+    trip_category_counts: Counter[str] = Counter()
+
+    # First pass: enforce strong diversity
+    for day in range(1, trip_days + 1):
+        day_selected: list[dict[str, Any]] = []
+        day_category_counts: Counter[str] = Counter()
+
+        for candidate in ranked_candidates:
+            if len(day_selected) >= activities_per_day:
+                break
+
+            place_id = candidate["place_id"]
+            category = (candidate.get("category") or "general").lower()
+
+            if place_id in used_place_ids:
+                continue
+
+            if day_category_counts[category] >= 1:
+                continue
+
+            if trip_category_counts[category] >= 2:
+                continue
+
+            day_selected.append(candidate)
+            used_place_ids.add(place_id)
+            day_category_counts[category] += 1
+            trip_category_counts[category] += 1
+
+        selected.extend(day_selected)
+
+    # Second pass: fill remaining slots with best leftovers
+    if len(selected) < total_needed:
+        for candidate in ranked_candidates:
+            if len(selected) >= total_needed:
+                break
+
+            place_id = candidate["place_id"]
+            if place_id in used_place_ids:
+                continue
+
+            selected.append(candidate)
+            used_place_ids.add(place_id)
+
+    return selected[:total_needed]
+
+
 # Simple way to build an itinerary, 3 activites per day, calculates the day, ranked order, and date scheduled
 # Returns a list of itinterary items, each item will have the day number, ranked order, reason for selection, and other metadata
 def _build_itinerary_structure(
@@ -159,8 +235,12 @@ def _build_itinerary_structure(
     activities_per_day: int = 3,
 ) -> list[dict[str, Any]]:
     itinerary_items: list[dict[str, Any]] = []
-    total_needed = trip_days * activities_per_day
-    selected = ranked_candidates[:total_needed]
+
+    selected = _select_diverse_candidates_for_trip( # Enforces diverse options
+        ranked_candidates=ranked_candidates,
+        trip_days=trip_days,
+        activities_per_day=activities_per_day,
+    )
 
     for idx, candidate in enumerate(selected):
         day_number = (idx // activities_per_day) + 1
@@ -174,7 +254,11 @@ def _build_itinerary_structure(
             "place_id": candidate["place_id"],
             "activity_id": candidate["activity_id"],
             "source_type": "generated",
-            "selection_reason": f"score={candidate['recommendation_score']}",
+            "selection_reason": (
+                f"score={candidate['recommendation_score']}; "
+                f"category={candidate.get('category')}; "
+                f"activity_type={candidate.get('activity_type')}"
+            ),
         })
 
     return itinerary_items
