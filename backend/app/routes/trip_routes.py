@@ -3,6 +3,8 @@ from datetime import datetime
 
 from app.services.trip_generator import generate_trip_from_preferences
 
+from app.repositories.trips_repo import get_full_trip
+
 trip_bp = Blueprint("trip", __name__, url_prefix="/api/v1/trips")
 
 
@@ -31,6 +33,19 @@ def generate_trip():
             "preferences": result["preferences"],
             "itinerary_items": result["itinerary_items"],
         }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@trip_bp.route("/<trip_id>", methods=["GET"])
+def get_trip(trip_id):
+    try:
+        result = get_full_trip(trip_id)
+
+        if not result:
+            return jsonify({"error": "Trip not found"}), 404
+
+        return jsonify(result), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
