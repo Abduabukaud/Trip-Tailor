@@ -184,6 +184,28 @@ def _score_candidate(candidate: dict[str, Any], payload: dict[str, Any]) -> floa
         or "theater" in place_name
     ):
         score -= 60
+    
+    # Gives places that are probably nightlife a boost in score when the user wants nightlife
+    if any(cat in preferred_categories for cat in {"bar", "nightlife"}):
+        nightlife_words = [
+            "bar",
+            "lounge",
+            "whiskey",
+            "cocktail",
+            "club",
+            "pub",
+            "taproom",
+            "tavern",
+        ]
+
+        is_nightlife_like = (
+            category == "bar"
+            or activity_type == "nightlife"
+            or any(word in place_name or word in title for word in nightlife_words)
+        )
+
+        if is_nightlife_like:
+            score += 18
 
     return round(score, 2)
 
@@ -288,6 +310,7 @@ def _build_itinerary_structure(
     start_date: date,
     trip_days: int,
     activities_per_day: int = 3,
+    nightlife_preferred: bool = False,
 ) -> list[dict[str, Any]]:
     itinerary_items: list[dict[str, Any]] = []
 
@@ -300,7 +323,16 @@ def _build_itinerary_structure(
     def is_bar_or_nightlife(candidate: dict[str, Any]) -> bool:
         category = (candidate.get("category") or "").lower()
         activity_type = (candidate.get("activity_type") or "").lower()
-        return category == "bar" or activity_type == "nightlife"
+        place_name = (candidate.get("place_name") or "").lower()
+        title = (candidate.get("title") or "").lower()
+        
+        if category == "bar" or activity_type == "nightlife":
+            return True
+        nightlife_words = ["bar", "lounge", "whiskey", "cocktail", "club", "pub", "taproom", "tavern",]
+
+        return any(word in place_name or word in title for word in nightlife_words)
+    
+    total_selected = len(selected)
 
     def is_daytime_anchor(candidate: dict[str, Any]) -> bool:
         category = (candidate.get("category") or "").lower()
@@ -318,23 +350,38 @@ def _build_itinerary_structure(
         day_candidates = selected[start:end]
 
         daytime = []
-        middle = []
         nightlife = []
 
         for candidate in day_candidates:
             if is_bar_or_nightlife(candidate):
                 nightlife.append(candidate)
-            elif is_daytime_anchor(candidate):
-                daytime.append(candidate)
             else:
-                middle.append(candidate)
+                daytime.append(candidate)
 
         # keep stronger scored items first within each bucket
         daytime.sort(key=lambda c: -(c.get("recommendation_score") or 0))
-        middle.sort(key=lambda c: -(c.get("recommendation_score") or 0))
         nightlife.sort(key=lambda c: -(c.get("recommendation_score") or 0))
 
-        ordered_day = daytime + middle + nightlife
+        if nightlife_preferred:
+            if activities_per_day >= 4:
+                nightlife_slots = 2
+            elif activities_per_day >= 3:
+                nightlife_slots = 1
+            else:
+                nightlife_slots = 0
+        else:
+            nightlife_slots = 0
+
+        nightlife_slots = min(nightlife_slots, len(nightlife))
+        daytime_slots = activities_per_day - nightlife_slots
+
+        ordered_day = daytime[:daytime_slots] + nightlife[:nightlife_slots]
+
+        if len(ordered_day) < activities_per_day:
+            used_ids = {c["place_id"] for c in ordered_day}
+            leftovers = [c for c in daytime[daytime_slots:] if c["place_id"] not in used_ids]
+            leftovers += [c for c in nightlife[nightlife_slots:] if c["place_id"] not in used_ids]
+            ordered_day.extend(leftovers[: activities_per_day - len(ordered_day)])
 
         for item_idx, candidate in enumerate(ordered_day):
             day_number = day_idx + 1
@@ -422,11 +469,14 @@ def generate_trip_from_preferences(payload: dict[str, Any]) -> dict[str, Any]:
         reverse=True,
     )
 
+    preferred_categories = _normalize_preferred_categories(payload)
+
     itinerary_items = _build_itinerary_structure( 
         ranked_candidates=ranked,
         start_date=start_date,
         trip_days=trip_days,
         activities_per_day=int(payload.get("activities_per_day", 3)),
+        nightlife_preferred=any(cat in preferred_categories for cat in {"bar", "nightlife"}),
     )
 
     delete_trip_itinerary_items(trip["id"])

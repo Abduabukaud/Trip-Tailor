@@ -144,7 +144,10 @@ export default function TripTailorQuestionnaire() {
 
     if (interests.includes("Museums & Culture")) preferredCategories.push("museum");
     if (interests.includes("Outdoors & Nature")) preferredCategories.push("park");
-    if (interests.includes("Nightlife")) preferredCategories.push("entertainment", "bar");
+    if (interests.includes("Nightlife")) preferredCategories.push("nightlife", "bar");
+    if (interests.length <= 2 && interests.includes("Nightlife")) {
+      excludedCategories.push("museum", "park", "movie_theater", "cafe");
+    }
     if (interests.includes("History")) preferredCategories.push("museum");
     if (interests.includes("Adventure")) preferredCategories.push("outdoor", "entertainment");
 
