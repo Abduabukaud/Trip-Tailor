@@ -3,26 +3,15 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createTripFromQuestionnaire } from '@/lib/trip-store'
 
-const INTERESTS = ['Food & Dining', 'Museums & Culture', 'Outdoors & Nature', 'Shopping', 'Nightlife', 'History', 'Adventure']
-const BUDGET_OPTIONS = ['Budget', 'Moderate', 'Luxury']
-const PACE_OPTIONS = ['Relaxed', 'Moderate', 'Active']
 
 export default function GeneratePage() {
   const router = useRouter()
   const [destination, setDestination] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [interests, setInterests] = useState<string[]>([])
-  const [budget, setBudget] = useState('')
-  const [pace, setPace] = useState('')
-  const [accessibility, setAccessibility] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  function toggleInterest(value: string) {
-    setInterests((prev) => (prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value]))
-  }
 
   function validate(): boolean {
     const next: Record<string, string> = {}
@@ -39,16 +28,14 @@ export default function GeneratePage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
-    const trip = createTripFromQuestionnaire({
+
+    const params = new URLSearchParams({
       destination: destination.trim(),
       startDate,
       endDate,
-      interests: interests.length ? interests : undefined,
-      budget: budget || undefined,
-      pace: pace || undefined,
-      accessibility: accessibility.trim() || undefined,
     })
-    router.push(`/trip/${trip.id}`)
+
+    router.push(`/questionnaire?${params.toString()}`)
   }
 
   return (
@@ -56,7 +43,7 @@ export default function GeneratePage() {
       <div className="container mx-auto px-6 max-w-2xl">
         <h1 className="text-4xl font-bold text-gray-900 mb-2">Create Your Itinerary</h1>
         <p className="text-gray-600 mb-8">
-          Tell us about your trip and preferences so we can tailor your itinerary.
+          Enter your trip details to get started, then continue to the questionnaire.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -109,84 +96,12 @@ export default function GeneratePage() {
             </div>
           </section>
 
-          {/* Preferences */}
-          <section className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Preferences</h2>
-            <div className="space-y-6">
-              <div>
-                <p className="block text-sm font-medium text-gray-700 mb-2">Interests</p>
-                <div className="flex flex-wrap gap-2">
-                  {INTERESTS.map((interest) => (
-                    <label key={interest} className="inline-flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={interests.includes(interest)}
-                        onChange={() => toggleInterest(interest)}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                      <span className="ml-2 text-gray-700">{interest}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="block text-sm font-medium text-gray-700 mb-2">Budget</p>
-                <div className="flex gap-4">
-                  {BUDGET_OPTIONS.map((opt) => (
-                    <label key={opt} className="inline-flex items-center">
-                      <input
-                        type="radio"
-                        name="budget"
-                        value={opt}
-                        checked={budget === opt}
-                        onChange={() => setBudget(opt)}
-                        className="border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                      <span className="ml-2 text-gray-700">{opt}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="block text-sm font-medium text-gray-700 mb-2">Pace</p>
-                <div className="flex gap-4">
-                  {PACE_OPTIONS.map((opt) => (
-                    <label key={opt} className="inline-flex items-center">
-                      <input
-                        type="radio"
-                        name="pace"
-                        value={opt}
-                        checked={pace === opt}
-                        onChange={() => setPace(opt)}
-                        className="border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                      <span className="ml-2 text-gray-700">{opt}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label htmlFor="accessibility" className="block text-sm font-medium text-gray-700 mb-1">
-                  Accessibility needs (optional)
-                </label>
-                <input
-                  id="accessibility"
-                  type="text"
-                  value={accessibility}
-                  onChange={(e) => setAccessibility(e.target.value)}
-                  placeholder="e.g. wheelchair access, dietary restrictions"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 bg-white"
-                />
-              </div>
-            </div>
-          </section>
-
           <div className="flex gap-4">
             <button
               type="submit"
               className="bg-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors"
             >
-              Generate itinerary
+              Start Questionnaire
             </button>
             <Link
               href="/"
