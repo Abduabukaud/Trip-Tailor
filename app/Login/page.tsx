@@ -9,6 +9,8 @@ export default function SignInPage() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
+  
+const [success, setSuccess] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,9 +39,17 @@ export default function SignInPage() {
 
       // store token
       localStorage.setItem("access_token", data.access_token);
+        // store token
+      localStorage.setItem("access_token", data.access_token);
 
-      // redirect
-      router.push("/dashboard");
+      // show success message
+      setSuccess("Login successful! Redirecting...");
+
+      // redirect after 1 second
+      setTimeout(() => {
+        router.push("/questionnaire");
+      }, 1000);
+      
 
     } catch (err) {
       setError("Server error");
