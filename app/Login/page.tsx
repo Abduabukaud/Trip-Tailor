@@ -13,23 +13,37 @@ export default function SignInPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // validation
-    if (!email || !password) {
-      setError("Please fill in all fields");
-      return;
-    }
+// validation
+if (!email || !password) {
+  setError("Please fill in all fields");
+  return;
+}
 
-    try {
-      // nathaniel put in the api here
-      if (email === "test@test.com" && password === "123456") {
-        router.push("/dashboard");
-      } else {
-        setError("Invalid credentials");
-      }
-    } catch (err) {
-      setError("Something went wrong");
-    }
-  };
+try {
+  const res = await fetch("http://127.0.0.1:5000/api/v1/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    setError(data.error || "Invalid credentials");
+    return;
+  }
+
+  // store token
+  localStorage.setItem("access_token", data.access_token);
+
+  // redirect
+  router.push("/dashboard");
+
+} catch (err) {
+  setError("Server error");
+}
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
