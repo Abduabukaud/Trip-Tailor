@@ -370,7 +370,7 @@ def _build_itinerary_structure(
             else:
                 nightlife_slots = 0
         else:
-            nightlife_slots = 0
+            nightlife_slots = min(len(nightlife), 1)
 
         nightlife_slots = min(nightlife_slots, len(nightlife))
         daytime_slots = activities_per_day - nightlife_slots
