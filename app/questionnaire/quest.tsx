@@ -99,6 +99,7 @@ export default function TripTailorQuestionnaire() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const destination = searchParams.get("destination") || "Detroit";
+  const state = searchParams.get("state") || ""
   const startDate = searchParams.get("startDate") || "";
   const endDate = searchParams.get("endDate") || "";
 
@@ -132,13 +133,13 @@ export default function TripTailorQuestionnaire() {
 };
 
   const buildPayload = () => {
-    const tripStyle = getAnswerValue(1);
-    const audience = getAnswerValue(2);
-    const activityMode = getAnswerValue(3);
-    const indoorOutdoor = getAnswerValue(4);
-    const locationsPerDay = getAnswerValue(5);
-    const interestsRaw = getAnswerValue(6);
-    const accessibility = getAnswerValue(7);
+    const tripStyle = getAnswerValue(0);
+    const audience = getAnswerValue(1);
+    const activityMode = getAnswerValue(2);
+    const indoorOutdoor = getAnswerValue(3);
+    const locationsPerDay = getAnswerValue(4);
+    const interestsRaw = getAnswerValue(5);
+    const accessibility = getAnswerValue(6);
 
     const preferredCategories: string[] = [];
     const excludedCategories: string[] = [];
@@ -175,7 +176,7 @@ export default function TripTailorQuestionnaire() {
       user_id: null,
       title: `${destination} Trip`,
       destination_city: destination,
-      destination_region: "MI",
+      destination_region: null,
       destination_country: "US",
       start_date: startDate,
       end_date: endDate,

@@ -111,6 +111,7 @@ function validate(): boolean {
                 />
                 {errors.destination && <p className="mt-1 text-sm text-red-600">{errors.destination}</p>}
               </div>
+              <div className="grid grid-cols-2 gap-4"></div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
