@@ -7,6 +7,8 @@ from app.repositories.trips_repo import get_full_trip, list_trips
 from app.repositories.trip_itinerary_repo import (insert_trip_itinerary_item, delete_trip_itinerary_item,
     update_trip_itinerary_item, reorder_day_items, get_trip_itinerary_items,)
 
+from app.repositories.recommendations_repo import get_alternate_candidates
+
 trip_bp = Blueprint("trip", __name__, url_prefix="/api/v1/trips")
 
 
@@ -134,6 +136,42 @@ def reorder_items(trip_id):
 
         reorder_day_items(trip_id, day_number, ordered_ids)
         return jsonify({"reordered": True}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
+@trip_bp.route("/<trip_id>/items/<item_id>/alternates", methods=["GET"])
+def get_item_alternates(trip_id, item_id):
+    """
+    Returns 3 alternate activity suggestions for a given itinerary item.
+    Excludes all places already in the trip itinerary.
+    """
+    try:
+        # Get the full trip to find the city and what's already in the itinerary
+        result = get_full_trip(trip_id)
+        if not result:
+            return jsonify({"error": "Trip not found"}), 404
+
+        trip = result["trip"]
+        city = trip["destination_city"]
+        region = trip.get("destination_region")
+
+        # Exclude every place already in the itinerary
+        exclude_place_ids = [
+            item["place_id"]
+            for item in result["itinerary_items"]
+            if item.get("place_id")
+        ]
+
+        alternates = get_alternate_candidates(
+            city=city,
+            region=region,
+            exclude_place_ids=exclude_place_ids,
+            limit=3,
+        )
+
+        return jsonify(alternates), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
